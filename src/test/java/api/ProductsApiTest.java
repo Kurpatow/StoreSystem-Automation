@@ -1,6 +1,7 @@
 package api;
 
-
+import client.AuthClient;
+import config.Config;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -14,44 +15,20 @@ class ProductsApiTest {
         String password = "Test123456";
         String name = "Test User";
 
+        AuthClient authClient = new AuthClient();
+
         // 1. Register
-        given()
-                .contentType("application/json")
-                .body("""
-                        {
-                            "name": "%s",
-                            "email": "%s",
-                            "password": "%s"
-                        }
-                        """.formatted(name, email, password))
-                .when()
-                .post("http://localhost:8001/register/")
-                .then()
-                .statusCode(201);
+        authClient.register(name, email, password);
 
-        // 2. Login and get token
-        String accessToken =
-                given()
-                        .contentType("application/json")
-                        .body("""
-                                {
-                                    "email": "%s",
-                                    "password": "%s"
-                                }
-                                """.formatted(email, password))
-                        .when()
-                        .post("http://localhost:8001/login/")
-                        .then()
-                        .statusCode(200)
-                        .extract()
-                        .path("access_token");
+        // 2. Login
+        String accessToken = authClient.login(email, password);
 
-        // 3. Get products with token
+        // 3. Get products
         given()
                 .auth()
                 .oauth2(accessToken)
                 .when()
-                .get("http://localhost:8002/products/")
+                .get(Config.get("products.base.url") + "/products/")
                 .then()
                 .statusCode(200);
     }
