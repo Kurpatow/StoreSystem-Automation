@@ -11,12 +11,12 @@ public class AuthClient {
         return given()
                 .contentType("application/json")
                 .body("""
-                        {
-                            "name": "%s",
-                            "email": "%s",
-                            "password": "%s"
-                        }
-                        """.formatted(name, email, password))
+                    {
+                        "name": "%s",
+                        "email": "%s",
+                        "password": "%s"
+                    }
+                    """.formatted(name, email, password))
                 .when()
                 .post(Config.get("auth.base.url") + "/register/")
                 .then()
