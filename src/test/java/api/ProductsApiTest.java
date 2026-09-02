@@ -8,23 +8,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ProductsApiTest {
+class ProductsApiTest extends BaseApiTest {
 
     @Test
     void getProductByIdShouldReturn200ForAuthorizedUser() {
 
-        String email = "test" + System.currentTimeMillis() + "@example.com";
-        String password = "Test123456";
-        String name = "Test User";
-
-        AuthClient authClient = new AuthClient();
         ProductClient productClient = new ProductClient();
 
-        // 1. Register
-        authClient.register(name, email, password);
-
-        // 2. Login
-        String accessToken = authClient.login(email, password);
+        String accessToken = getAccessToken();
 
         // 3. Create supplier
         String supplierRequest = """
