@@ -1,10 +1,12 @@
 package api;
 
 import client.AuthClient;
+import client.ProductClient;
 
 public class BaseApiTest {
 
     protected final AuthClient authClient = new AuthClient();
+    protected final ProductClient productClient = new ProductClient();
 
     protected String getAccessToken() {
 

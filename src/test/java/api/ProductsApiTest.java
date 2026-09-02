@@ -1,9 +1,8 @@
 package api;
 
-import client.AuthClient;
 import client.ProductClient;
+import data.TestData;
 import io.restassured.response.Response;
-import model.ProductRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,23 +12,14 @@ class ProductsApiTest extends BaseApiTest {
     @Test
     void getProductByIdShouldReturn200ForAuthorizedUser() {
 
-        ProductClient productClient = new ProductClient();
-
         String accessToken = getAccessToken();
 
         // 3. Create supplier
-        String supplierRequest = """
-        {
-          "name": "Test Supplier %s",
-          "contact_name": "Test Contact",
-          "contact_email": "supplier@example.com",
-          "phone_number": "+37360000000",
-          "address": "Test Address",
-          "country": "Moldova",
-          "city": "Chisinau",
-          "website": "https://example.com/"
-        }
-        """.formatted(System.currentTimeMillis());
+        String supplierName =
+                "Test Supplier " + System.currentTimeMillis();
+
+        String supplierRequest =
+                TestData.supplierRequest(supplierName);
 
         Response supplierResponse =
                 productClient.createSupplier(accessToken, supplierRequest);
@@ -47,20 +37,14 @@ class ProductsApiTest extends BaseApiTest {
         assertEquals(false, supplierId == null);
 
         // 4. Create product
-        String productRequest = """
-{
-  "name": "Test Product %s",
-  "description": "Product created by automated test",
-  "category": "TestCategory",
-  "price": 100,
-  "stock_quantity": 10,
-  "supplier_id": "%s",
-  "image_url": "https://example.com/product.jpg",
-  "weight": 1.5,
-  "dimensions": "10x10x10",
-  "manufacturer": "TestManufacturer"
-}
-""".formatted(System.currentTimeMillis(), supplierId);
+        String productName =
+                "Test Product " + System.currentTimeMillis();
+
+        String productRequest =
+                TestData.productRequest(
+                        productName,
+                        supplierId
+                );
 
         Response productResponse =
                 productClient.createProduct(accessToken, productRequest);
@@ -117,20 +101,11 @@ class ProductsApiTest extends BaseApiTest {
         // 8. Update product
         String updatedProductName = "Updated Product " + System.currentTimeMillis();
 
-        String updateProductRequest = """
-{
-  "name": "%s",
-  "description": "Updated product description",
-  "category": "UpdatedCategory",
-  "price": 200,
-  "stock_quantity": 25,
-  "supplier_id": "%s",
-  "image_url": "https://example.com/updated-product.jpg",
-  "weight": 2.5,
-  "dimensions": "20x20x20",
-  "manufacturer": "UpdatedManufacturer"
-}
-""".formatted(updatedProductName, supplierId);
+        String updateProductRequest =
+                TestData.updatedProductRequest(
+                        updatedProductName,
+                        supplierId
+                );
 
         Response updateProductResponse =
                 productClient.updateProduct(
@@ -177,8 +152,6 @@ class ProductsApiTest extends BaseApiTest {
     @Test
     void getProductsShouldReturn401WithoutAuthorization() {
 
-        ProductClient productClient = new ProductClient();
-
         Response response = productClient.getAllProducts("");
 
         assertEquals(401, response.statusCode());
@@ -186,8 +159,6 @@ class ProductsApiTest extends BaseApiTest {
 
     @Test
     void createProductShouldReturn401WithoutAuthorization() {
-
-        ProductClient productClient = new ProductClient();
 
         String productRequest = """
     {
@@ -213,23 +184,14 @@ class ProductsApiTest extends BaseApiTest {
     @Test
     void createProductShouldReturn422ForDuplicateName() {
 
-        ProductClient productClient = new ProductClient();
-
         String accessToken = getAccessToken();
 
         // Create supplier
-        String supplierRequest = """
-    {
-      "name": "Duplicate Product Supplier %s",
-      "contact_name": "Test Contact",
-      "contact_email": "supplier@example.com",
-      "phone_number": "+37360000000",
-      "address": "Test Address",
-      "country": "Moldova",
-      "city": "Chisinau",
-      "website": "https://example.com/"
-    }
-    """.formatted(System.currentTimeMillis());
+        String supplierName =
+                "Duplicate Product Supplier " + System.currentTimeMillis();
+
+        String supplierRequest =
+                TestData.supplierRequest(supplierName);
 
         Response supplierResponse =
                 productClient.createSupplier(
@@ -285,23 +247,14 @@ class ProductsApiTest extends BaseApiTest {
     @Test
     void createProductShouldReturn422ForDuplicateNameIgnoringCase() {
 
-        ProductClient productClient = new ProductClient();
-
         String accessToken = getAccessToken();
 
         // Create supplier
-        String supplierRequest = """
-    {
-      "name": "Case Test Supplier %s",
-      "contact_name": "Test Contact",
-      "contact_email": "supplier@example.com",
-      "phone_number": "+37360000000",
-      "address": "Test Address",
-      "country": "Moldova",
-      "city": "Chisinau",
-      "website": "https://example.com/"
-    }
-    """.formatted(System.currentTimeMillis());
+        String supplierName =
+                "Case Test Supplier " + System.currentTimeMillis();
+
+        String supplierRequest =
+                TestData.supplierRequest(supplierName);
 
         Response supplierResponse =
                 productClient.createSupplier(
@@ -366,5 +319,223 @@ class ProductsApiTest extends BaseApiTest {
                 );
 
         assertEquals(422, secondResponse.statusCode());
+    }
+
+    @Test
+    void createProductShouldReturn404ForNonExistentSupplier() {
+
+        String accessToken = getAccessToken();
+
+        String nonExistentSupplierId =
+                "00000000-0000-0000-0000-000000000001";
+
+        String productRequest = """
+    {
+      "name": "Nonexistent Supplier Product %s",
+      "description": "Product with nonexistent supplier",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                nonExistentSupplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(404, response.statusCode());
+
+        assertEquals(
+                "Supplier not found",
+                response.jsonPath().getString("detail")
+        );
+    }
+
+    @Test
+    void createProductShouldReturn422ForInvalidSupplierId() {
+
+        String accessToken = getAccessToken();
+
+        String invalidSupplierId = "abc";
+
+        String productRequest = """
+    {
+      "name": "Invalid Supplier ID Product %s",
+      "description": "Product with invalid supplier ID",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                invalidSupplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(422, response.statusCode());
+    }
+
+    @Test
+    void getProductByIdShouldReturn400ForInvalidProductId() {
+
+        String accessToken = getAccessToken();
+
+        Response response =
+                productClient.getProductById(
+                        accessToken,
+                        "abc"
+                );
+
+        assertEquals(400, response.statusCode());
+    }
+
+    @Test
+    void getProductsShouldReturn200ForAuthorizedUser() {
+
+        String accessToken = getAccessToken();
+
+        Response response =
+                productClient.getAllProducts(accessToken);
+
+        assertEquals(200, response.statusCode());
+    }
+
+    @Test
+    void getProductByIdShouldReturn404ForNonExistentProduct() {
+
+        String accessToken = getAccessToken();
+
+        String nonExistentProductId =
+                "00000000-0000-0000-0000-000000000001";
+
+        Response response =
+                productClient.getProductById(
+                        accessToken,
+                        nonExistentProductId
+                );
+
+        assertEquals(404, response.statusCode());
+
+        assertEquals(
+                "Product not found",
+                response.jsonPath().getString("detail")
+        );
+    }
+
+    @Test
+    void deleteProductShouldReturn200() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Delete Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String productName =
+                "Delete Product " + System.currentTimeMillis();
+
+        Response productResponse =
+                productClient.createProduct(
+                        accessToken,
+                        TestData.productRequest(productName, supplierId)
+                );
+
+        assertEquals(201, productResponse.statusCode());
+
+        String productId =
+                productResponse.jsonPath().getString("product_id");
+
+        Response deleteResponse =
+                productClient.deleteProduct(
+                        accessToken,
+                        productId
+                );
+
+        assertEquals(200, deleteResponse.statusCode());
+
+        Response getResponse =
+                productClient.getProductById(
+                        accessToken,
+                        productId
+                );
+
+        assertEquals(404, getResponse.statusCode());
+
+        assertEquals(
+                "Product not found",
+                getResponse.jsonPath().getString("detail")
+        );
+    }
+
+    @Test
+    void getProductsShouldReturn401ForInvalidToken() {
+
+        String invalidToken = "invalid-token";
+
+        Response response =
+                productClient.getAllProducts(invalidToken);
+
+        assertEquals(401, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldReturn422WhenNameIsMissing() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Missing Name Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String requestBody =
+                TestData.productRequestWithoutName(supplierId);
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        requestBody
+                );
+
+        assertEquals(422, response.statusCode());
     }
 }

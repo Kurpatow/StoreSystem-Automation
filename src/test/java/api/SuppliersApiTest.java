@@ -1,6 +1,6 @@
 package api;
 
-import client.ProductClient;
+import data.TestData;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
@@ -12,22 +12,12 @@ class SuppliersApiTest extends BaseApiTest {
     @Test
     void createSupplierShouldReturn201() {
 
-        ProductClient productClient = new ProductClient();
-
         String accessToken = getAccessToken();
 
-        String supplierRequest = """
-        {
-          "name": "Test Supplier %s",
-          "contact_name": "Test Contact",
-          "contact_email": "supplier@example.com",
-          "phone_number": "+37360000000",
-          "address": "Test Address",
-          "country": "Moldova",
-          "city": "Chisinau",
-          "website": "https://example.com/"
-        }
-        """.formatted(System.currentTimeMillis());
+        String supplierName = "Test Supplier " + System.currentTimeMillis();
+
+        String supplierRequest =
+                TestData.supplierRequest(supplierName);
 
         Response response =
                 productClient.createSupplier(
@@ -46,24 +36,12 @@ class SuppliersApiTest extends BaseApiTest {
     @Test
     void createSupplierShouldReturn422ForDuplicateName() {
 
-        ProductClient productClient = new ProductClient();
-
         String accessToken = getAccessToken();
 
         String supplierName = "Duplicate Supplier " + System.currentTimeMillis();
 
-        String supplierRequest = """
-    {
-      "name": "%s",
-      "contact_name": "Test Contact",
-      "contact_email": "supplier@example.com",
-      "phone_number": "+37360000000",
-      "address": "Test Address",
-      "country": "Moldova",
-      "city": "Chisinau",
-      "website": "https://example.com/"
-    }
-    """.formatted(supplierName);
+        String supplierRequest =
+                TestData.supplierRequest(supplierName);
 
         // First supplier
         Response firstResponse =
@@ -79,6 +57,37 @@ class SuppliersApiTest extends BaseApiTest {
                 productClient.createSupplier(
                         accessToken,
                         supplierRequest
+                );
+
+        assertEquals(422, secondResponse.statusCode());
+    }
+
+    @Test
+    void createSupplierShouldReturn422ForDuplicateNameIgnoringCase() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Case Supplier " + System.currentTimeMillis();
+
+        String supplierRequest =
+                TestData.supplierRequest(supplierName);
+
+        Response firstResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        supplierRequest
+                );
+
+        assertEquals(201, firstResponse.statusCode());
+
+        String upperCaseRequest =
+                TestData.supplierRequest(supplierName.toUpperCase());
+
+        Response secondResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        upperCaseRequest
                 );
 
         assertEquals(422, secondResponse.statusCode());

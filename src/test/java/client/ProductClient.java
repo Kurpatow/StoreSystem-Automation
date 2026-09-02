@@ -1,9 +1,7 @@
 package client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import config.Config;
 import io.restassured.response.Response;
-import model.ProductRequest;
 
 import static io.restassured.RestAssured.given;
 
@@ -11,8 +9,6 @@ public class ProductClient {
 
     private static final String BASE_URL =
             Config.get("products.base.url");
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public Response getAllProducts(String token) {
         return given()
