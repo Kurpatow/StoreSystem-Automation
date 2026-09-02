@@ -78,4 +78,14 @@ public class ProductClient {
                 .when()
                 .delete("/products/{product_id}");
     }
+
+    public Response createSupplier(String token, String requestBody) {
+        return given()
+                .baseUri(BASE_URL)
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(requestBody)
+                .when()
+                .post("/suppliers/");
+    }
 }
