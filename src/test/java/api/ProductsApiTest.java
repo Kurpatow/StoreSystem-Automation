@@ -173,4 +173,198 @@ class ProductsApiTest extends BaseApiTest {
                 getUpdatedProductResponse.jsonPath().getString("category")
         );
     }
+
+    @Test
+    void getProductsShouldReturn401WithoutAuthorization() {
+
+        ProductClient productClient = new ProductClient();
+
+        Response response = productClient.getAllProducts("");
+
+        assertEquals(401, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldReturn401WithoutAuthorization() {
+
+        ProductClient productClient = new ProductClient();
+
+        String productRequest = """
+    {
+      "name": "Unauthorized Product %s",
+      "description": "Product without authorization",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": 10,
+      "supplier_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(System.currentTimeMillis());
+
+        Response response =
+                productClient.createProduct("", productRequest);
+
+        assertEquals(401, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldReturn422ForDuplicateName() {
+
+        ProductClient productClient = new ProductClient();
+
+        String accessToken = getAccessToken();
+
+        // Create supplier
+        String supplierRequest = """
+    {
+      "name": "Duplicate Product Supplier %s",
+      "contact_name": "Test Contact",
+      "contact_email": "supplier@example.com",
+      "phone_number": "+37360000000",
+      "address": "Test Address",
+      "country": "Moldova",
+      "city": "Chisinau",
+      "website": "https://example.com/"
+    }
+    """.formatted(System.currentTimeMillis());
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        supplierRequest
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        assertEquals(false, supplierId == null);
+
+        // Product with unique name
+        String productName =
+                "Duplicate Product " + System.currentTimeMillis();
+
+        String productRequest = """
+    {
+      "name": "%s",
+      "description": "Product for duplicate test",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(productName, supplierId);
+
+        // First product
+        Response firstResponse =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(201, firstResponse.statusCode());
+
+        // Second product with the same name
+        Response secondResponse =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(422, secondResponse.statusCode());
+    }
+
+    @Test
+    void createProductShouldReturn422ForDuplicateNameIgnoringCase() {
+
+        ProductClient productClient = new ProductClient();
+
+        String accessToken = getAccessToken();
+
+        // Create supplier
+        String supplierRequest = """
+    {
+      "name": "Case Test Supplier %s",
+      "contact_name": "Test Contact",
+      "contact_email": "supplier@example.com",
+      "phone_number": "+37360000000",
+      "address": "Test Address",
+      "country": "Moldova",
+      "city": "Chisinau",
+      "website": "https://example.com/"
+    }
+    """.formatted(System.currentTimeMillis());
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        supplierRequest
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        assertEquals(false, supplierId == null);
+
+        String productName =
+                "Case Test Product " + System.currentTimeMillis();
+
+        // First product
+        String firstProductRequest = """
+    {
+      "name": "%s",
+      "description": "First product",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(productName, supplierId);
+
+        Response firstResponse =
+                productClient.createProduct(
+                        accessToken,
+                        firstProductRequest
+                );
+
+        assertEquals(201, firstResponse.statusCode());
+
+        // Second product with the same name but different case
+        String secondProductRequest = """
+    {
+      "name": "%s",
+      "description": "Second product",
+      "category": "TestCategory",
+      "price": 200,
+      "stock_quantity": 20,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product2.jpg",
+      "weight": 2.5,
+      "dimensions": "20x20x20",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(productName.toLowerCase(), supplierId);
+
+        Response secondResponse =
+                productClient.createProduct(
+                        accessToken,
+                        secondProductRequest
+                );
+
+        assertEquals(422, secondResponse.statusCode());
+    }
 }
