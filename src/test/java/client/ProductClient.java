@@ -1,13 +1,18 @@
 package client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import config.Config;
 import io.restassured.response.Response;
+import model.ProductRequest;
 
 import static io.restassured.RestAssured.given;
 
 public class ProductClient {
 
-    private static final String BASE_URL = "http://localhost:8002";
+    private static final String BASE_URL =
+            Config.get("products.base.url");
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public Response getAllProducts(String token) {
         return given()
@@ -26,12 +31,12 @@ public class ProductClient {
                 .get("/products/{product_id}");
     }
 
-    public Response createProduct(String token, String requestBody) {
+    public Response createProduct(String token, String request) {
         return given()
                 .baseUri(BASE_URL)
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(requestBody)
+                .body(request)
                 .when()
                 .post("/products/");
     }

@@ -3,6 +3,7 @@ package api;
 import client.AuthClient;
 import client.ProductClient;
 import io.restassured.response.Response;
+import model.ProductRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -97,6 +98,88 @@ class ProductsApiTest {
         assertEquals(
                 productId,
                 getProductResponse.jsonPath().getString("product_id")
+        );
+
+        // 6. Update product availability
+        Response updateAvailabilityResponse =
+                productClient.updateAvailability(accessToken, productId, true);
+
+        System.out.println("UPDATE AVAILABILITY RESPONSE:");
+        System.out.println(updateAvailabilityResponse.asPrettyString());
+
+        assertEquals(200, updateAvailabilityResponse.statusCode());
+
+        // 7. Get product again and verify availability
+        Response updatedProductResponse =
+                productClient.getProductById(accessToken, productId);
+
+        System.out.println("UPDATED PRODUCT RESPONSE:");
+        System.out.println(updatedProductResponse.asPrettyString());
+
+        assertEquals(200, updatedProductResponse.statusCode());
+
+        assertEquals(
+                true,
+                updatedProductResponse.jsonPath().getBoolean("is_available")
+        );
+
+        // 8. Update product
+        String updatedProductName = "Updated Product " + System.currentTimeMillis();
+
+        String updateProductRequest = """
+{
+  "name": "%s",
+  "description": "Updated product description",
+  "category": "UpdatedCategory",
+  "price": 200,
+  "stock_quantity": 25,
+  "supplier_id": "%s",
+  "image_url": "https://example.com/updated-product.jpg",
+  "weight": 2.5,
+  "dimensions": "20x20x20",
+  "manufacturer": "UpdatedManufacturer"
+}
+""".formatted(updatedProductName, supplierId);
+
+        Response updateProductResponse =
+                productClient.updateProduct(
+                        accessToken,
+                        productId,
+                        updateProductRequest
+                );
+
+        System.out.println("UPDATE PRODUCT RESPONSE:");
+        System.out.println(updateProductResponse.asPrettyString());
+
+        assertEquals(200, updateProductResponse.statusCode());
+
+        // 9. Get updated product and verify changes
+        Response getUpdatedProductResponse =
+                productClient.getProductById(accessToken, productId);
+
+        System.out.println("GET UPDATED PRODUCT RESPONSE:");
+        System.out.println(getUpdatedProductResponse.asPrettyString());
+
+        assertEquals(200, getUpdatedProductResponse.statusCode());
+
+        assertEquals(
+                updatedProductName,
+                getUpdatedProductResponse.jsonPath().getString("name")
+        );
+
+        assertEquals(
+                "Updated product description",
+                getUpdatedProductResponse.jsonPath().getString("description")
+        );
+
+        assertEquals(
+                25,
+                getUpdatedProductResponse.jsonPath().getInt("stock_quantity")
+        );
+
+        assertEquals(
+                "UpdatedCategory",
+                getUpdatedProductResponse.jsonPath().getString("category")
         );
     }
 }
