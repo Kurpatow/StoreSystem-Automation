@@ -674,11 +674,103 @@ class ProductsApiTest extends BaseApiTest {
                         productRequest
                 );
 
-        System.out.println("ZERO PRICE RESPONSE:");
+        assertEquals(422, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldValidateZeroStockQuantity() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Zero Stock Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String productRequest = """
+    {
+      "name": "Zero Stock Product %s",
+      "description": "Product with zero stock quantity",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": 0,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                supplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(201, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldValidateInvalidPriceType() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Invalid Price Type Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String productRequest = """
+    {
+      "name": "Invalid Price Type Product %s",
+      "description": "Product with invalid price type",
+      "category": "TestCategory",
+      "price": "abc",
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                supplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        System.out.println("INVALID PRICE TYPE RESPONSE:");
         System.out.println(response.asPrettyString());
 
         System.out.println(
-                "ZERO PRICE STATUS: " + response.statusCode()
+                "INVALID PRICE TYPE STATUS: " + response.statusCode()
         );
     }
 }
