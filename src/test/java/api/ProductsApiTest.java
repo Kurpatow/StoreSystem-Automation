@@ -538,4 +538,147 @@ class ProductsApiTest extends BaseApiTest {
 
         assertEquals(422, response.statusCode());
     }
+
+    @Test
+    void createProductShouldValidateNegativePrice() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Negative Price Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String productRequest = """
+    {
+      "name": "Negative Price Product %s",
+      "description": "Product with negative price",
+      "category": "TestCategory",
+      "price": -100,
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                supplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(422, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldValidateNegativeStockQuantity() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Negative Stock Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String productRequest = """
+    {
+      "name": "Negative Stock Product %s",
+      "description": "Product with negative stock quantity",
+      "category": "TestCategory",
+      "price": 100,
+      "stock_quantity": -10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                supplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        assertEquals(422, response.statusCode());
+    }
+
+    @Test
+    void createProductShouldValidateZeroPrice() {
+
+        String accessToken = getAccessToken();
+
+        String supplierName =
+                "Zero Price Supplier " + System.currentTimeMillis();
+
+        Response supplierResponse =
+                productClient.createSupplier(
+                        accessToken,
+                        TestData.supplierRequest(supplierName)
+                );
+
+        assertEquals(201, supplierResponse.statusCode());
+
+        String supplierId =
+                supplierResponse.jsonPath().getString("supplier_id");
+
+        String productRequest = """
+    {
+      "name": "Zero Price Product %s",
+      "description": "Product with zero price",
+      "category": "TestCategory",
+      "price": 0,
+      "stock_quantity": 10,
+      "supplier_id": "%s",
+      "image_url": "https://example.com/product.jpg",
+      "weight": 1.5,
+      "dimensions": "10x10x10",
+      "manufacturer": "TestManufacturer"
+    }
+    """.formatted(
+                System.currentTimeMillis(),
+                supplierId
+        );
+
+        Response response =
+                productClient.createProduct(
+                        accessToken,
+                        productRequest
+                );
+
+        System.out.println("ZERO PRICE RESPONSE:");
+        System.out.println(response.asPrettyString());
+
+        System.out.println(
+                "ZERO PRICE STATUS: " + response.statusCode()
+        );
+    }
 }
