@@ -1,17 +1,41 @@
 package ui.tests;
 
+import config.SelenideConfig;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import ui.pages.LoginPage;
+import utils.TestUser;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class LoginTest {
+
+
+    @BeforeAll
+    static void setup() {
+        SelenideConfig.setup();
+    }
+
 
     @Test
     void successfulLogin() {
 
-        new LoginPage()
+
+        LoginPage loginPage =
+                new LoginPage();
+
+
+        loginPage
                 .open()
-                .enterEmail("test@example.com")
-                .enterPassword("Test123456")
+                .enterEmail(TestUser.getEmail())
+                .enterPassword(TestUser.getPassword())
                 .clickLogin();
+
+
+        assertTrue(
+                loginPage.isLoginSuccessful(),
+                "Авторизация не выполнена"
+        );
     }
 }
