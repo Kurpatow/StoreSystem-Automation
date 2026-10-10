@@ -19,6 +19,9 @@ public class RegisterPage {
     private final SelenideElement registerButton =
             $("button[type='submit']");
 
+    private final SelenideElement errorMessage =
+            $("#errorMessage");
+
 
     public RegisterPage open() {
         com.codeborne.selenide.Selenide.open(
@@ -52,5 +55,13 @@ public class RegisterPage {
 
     public String getCurrentUrl() {
         return WebDriverRunner.url();
+    }
+
+    public boolean isErrorVisible() {
+        return errorMessage.isDisplayed();
+    }
+
+    public String getErrorMessage() {
+        return errorMessage.getText();
     }
 }
