@@ -1,12 +1,21 @@
+
 package ui.tests;
 
 import config.SelenideConfig;
-import io.qameta.allure.*;
+import io.qameta.allure.Allure;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Story;
+import io.qameta.allure.Description;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import ui.pages.LoginPage;
 import ui.pages.RegisterPage;
-import utils.*;
+import utils.AllureSteps;
+import utils.DatabaseHelper;
+import utils.TestData;
+import utils.TestUser;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Epic("Store System")
@@ -20,67 +29,81 @@ public class AuthE2ETest {
 
     @Test
     @Story("Register and Login")
-    @Description(
-            "Регистрация нового пользователя и последующая авторизация"
-    )
+    @Description("Регистрация нового пользователя и последующая авторизация")
     void registerAndLoginFlow() {
 
-        // Генерируем пользователя
-        String email = TestData.generateEmail();
-        String password = TestData.password();
+        String email = Allure.step(
+                "Сгенерировать email нового пользователя",
+                TestData::generateEmail
+        );
+
+        String password = Allure.step(
+                "Подготовить пароль пользователя",
+                TestData::password
+        );
 
         AllureSteps.createUser(email);
 
-        System.out.println("EMAIL: " + email);
-        System.out.println("PASSWORD: " + password);
-
-        TestUser.save(
-                email,
-                password
+        Allure.step(
+                "Сохранить данные пользователя для дальнейшего использования",
+                () -> TestUser.save(email, password)
         );
 
-        // Регистрация
-        AllureSteps.openRegisterPage();
+        Allure.step(
+                "Открыть страницу регистрации",
+                AllureSteps::openRegisterPage
+        );
 
-        RegisterPage registerPage =
-                new RegisterPage();
+        RegisterPage registerPage = new RegisterPage();
 
-        registerPage
-                .open()
-                .enterUsername("Auto User")
-                .enterEmail(email)
-                .enterPassword(password)
-                .clickRegister();
+        Allure.step("Зарегистрировать нового пользователя", () -> {
+            registerPage
+                    .open()
+                    .enterUsername("Auto User")
+                    .enterEmail(email)
+                    .enterPassword(password)
+                    .clickRegister();
+        });
 
-        // Проверяем БД
         AllureSteps.checkUserInDatabase(email);
 
-        boolean userExists =
-                DatabaseHelper.waitForUser(
-                        email,
-                        10
-                );
-
-        assertTrue(
-                userExists,
-                "Пользователь не найден в базе"
+        boolean userExists = Allure.step(
+                "Проверить наличие пользователя в базе данных",
+                () -> DatabaseHelper.waitForUser(email, 10)
         );
 
-        // Авторизация
+        Allure.step(
+                "Убедиться, что пользователь сохранён в базе данных",
+                () -> assertTrue(
+                        userExists,
+                        "Пользователь не найден в базе"
+                )
+        );
+
         AllureSteps.loginUser(email);
 
-        LoginPage loginPage =
-                new LoginPage();
+        LoginPage loginPage = new LoginPage();
 
-        loginPage
-                .open()
-                .enterEmail(email)
-                .enterPassword(password)
-                .clickLogin();
+        Allure.step("Выполнить авторизацию пользователя", () -> {
+            loginPage
+                    .open()
+                    .enterEmail(email)
+                    .enterPassword(password)
+                    .clickLogin();
+        });
 
-        System.out.println(
-                "LOGIN URL: "
-                        + loginPage.getCurrentUrl()
+        String currentUrl = Allure.step(
+                "Получить URL после авторизации",
+                loginPage::getCurrentUrl
         );
+
+
+        Allure.step("Зафиксировать URL после авторизации", () ->
+                Allure.addAttachment(
+                        "URL после авторизации",
+                        currentUrl == null ? "URL отсутствует" : currentUrl
+                )
+        );
+
     }
 }
